@@ -30,3 +30,11 @@ Simulasi respons lambat dilakukan dengan menambahkan *endpoint* `/sleep` yang ak
 Fenomena ini adalah contoh nyata dari *concurrency bottleneck* yang sangat fatal jika dibiarkan di lingkungan produksi. Operasi I/O yang berat atau *query* database yang lambat pada satu *request* dapat melumpuhkan seluruh layanan web. Hal ini menunjukkan dengan jelas mengapa arsitektur asinkron (*asynchronous*) atau *multithreading* merupakan standar mutlak yang harus diterapkan pada *backend* untuk memastikan skalabilitas dan daya tanggap (*responsiveness*) sistem ketika menghadapi lonjakan pengguna secara bersamaan.
 
 ---
+
+## Commit 5 Reflection notes
+
+Untuk mengatasi masalah pemblokiran di komit sebelumnya, kita mengimplementasikan `ThreadPool` untuk membuat server menjadi *multithreaded*. Daripada membuat *thread* baru untuk setiap koneksi yang masuk—yang bisa menguras memori dan menyebabkan serangan DoS (*Denial of Service*) jika ada jutaan *request*—kita membatasi jumlah *thread* pekerja (*worker*) pada kapasitas tertentu. Setiap koneksi baru akan dikirim sebagai *job* ke dalam antrean (melalui *channel* `mpsc`), dan *worker* yang sedang menganggur akan mengambil pekerjaan tersebut.
+
+Implementasi di Rust sangat menarik karena kita dipaksa memikirkan keamanan memori (*memory safety*) saat berbagi *state* antar *thread*. Kita harus menggunakan `Arc<Mutex<Receiver>>` agar *receiver* dari *channel* dapat dimiliki oleh banyak *worker* sekaligus (`Arc`), namun memastikan hanya ada satu *worker* yang dapat menarik pekerjaan dari antrean pada satu waktu secara eksklusif (`Mutex`). Model ini mengajarkan fundamental konkurensi yang sangat solid, memastikan tidak ada *data race* sekaligus menjaga performa server tetap stabil dan responsif di bawah beban kerja yang tinggi.
+
+---
