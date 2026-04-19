@@ -23,3 +23,10 @@ Pada komit ini, kita mengimplementasikan *routing* sederhana untuk memvalidasi *
 Dengan *refactoring*, kita memanfaatkan `match` pada Rust untuk sekadar menentukan *status line* dan nama file HTML yang akan dieksekusi, lalu menyimpannya dalam variabel. Pemrosesan akhir—seperti membaca file, menghitung *length*, dan memformat *string response*—hanya ditulis satu kali di bagian akhir fungsi. Pola desain ini tidak hanya membuat kode lebih bersih dan mudah dibaca, tetapi juga sangat memudahkan pengembangan ke depannya jika kita ingin menambahkan ratusan *endpoint* baru, karena logika utama pengiriman balasan sudah terpusat di satu tempat.
 
 ---
+
+## Commit 4 Reflection notes
+Simulasi respons lambat dilakukan dengan menambahkan *endpoint* `/sleep` yang akan memaksa *thread* untuk berhenti sementara selama 10 detik menggunakan `thread::sleep`. Karena arsitektur server kita saat ini masih menggunakan model *single-threaded*, mengeksekusi *endpoint* ini akan sepenuhnya memblokir eksekusi program. Akibatnya, jika ada pengguna lain yang mencoba mengakses server (misalnya ke *endpoint* `/` biasa) saat server sedang "tertidur", permintaan pengguna tersebut akan menggantung dan tidak diproses sampai proses *sleep* selesai.
+
+Fenomena ini adalah contoh nyata dari *concurrency bottleneck* yang sangat fatal jika dibiarkan di lingkungan produksi. Operasi I/O yang berat atau *query* database yang lambat pada satu *request* dapat melumpuhkan seluruh layanan web. Hal ini menunjukkan dengan jelas mengapa arsitektur asinkron (*asynchronous*) atau *multithreading* merupakan standar mutlak yang harus diterapkan pada *backend* untuk memastikan skalabilitas dan daya tanggap (*responsiveness*) sistem ketika menghadapi lonjakan pengguna secara bersamaan.
+
+---
