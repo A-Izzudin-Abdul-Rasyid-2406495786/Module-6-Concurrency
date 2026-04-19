@@ -38,3 +38,8 @@ Untuk mengatasi masalah pemblokiran di komit sebelumnya, kita mengimplementasika
 Implementasi di Rust sangat menarik karena kita dipaksa memikirkan keamanan memori (*memory safety*) saat berbagi *state* antar *thread*. Kita harus menggunakan `Arc<Mutex<Receiver>>` agar *receiver* dari *channel* dapat dimiliki oleh banyak *worker* sekaligus (`Arc`), namun memastikan hanya ada satu *worker* yang dapat menarik pekerjaan dari antrean pada satu waktu secara eksklusif (`Mutex`). Model ini mengajarkan fundamental konkurensi yang sangat solid, memastikan tidak ada *data race* sekaligus menjaga performa server tetap stabil dan responsif di bawah beban kerja yang tinggi.
 
 ---
+
+## Commit Bonus Reflection notes
+Fungsi `new` di Rust secara konvensi diharapkan selalu berhasil menginisialisasi objek atau langsung *panic* jika terjadi kegagalan fatal. Namun, untuk `ThreadPool`, pengguna bisa saja memasukkan angka `0` sebagai jumlah kapasitas *thread*, yang mana hal tersebut tidak masuk akal dan memicu *panic*. Membuat library yang secara sepihak mematikan program utama adalah praktik desain perangkat lunak yang buruk. 
+
+Sebagai gantinya, kita membuat fungsi `build` yang mengembalikan tipe `Result<ThreadPool, PoolCreationError>`. Dengan menggunakan `Result`, kita memindahkan tanggung jawab penanganan *error* kembali ke pemanggil fungsi (*caller*). Jika inisialisasi gagal karena parameter yang tidak valid, program tidak akan langsung *crash*, melainkan memberikan kesempatan bagi developer untuk menangani kesalahan tersebut dengan lebih anggun (*graceful error handling*), misalnya dengan memberikan log peringatan atau mencoba nilai *default*. Ini adalah bentuk perbaikan fungsionalitas yang sejalan dengan filosofi *robustness* dari bahasa Rust.
